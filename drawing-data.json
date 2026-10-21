@@ -7,33 +7,40 @@
                 "rev": "REV 00",
                 "uploaded": "Wed, 26 Au",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             },
             {
                 "filename": "MIL26.006-DMBP-1420-09-1_rev.00 - Drive Motor Base Plate.pdf",
                 "rev": "REV 00",
                 "uploaded": "Wed, 26 Au",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             },
             {
                 "filename": "MIL26.006-MGBP-1420-09-3_rev.00 - Main Gearbox Base Plate.pdf",
                 "rev": "REV 00",
                 "uploaded": "Wed, 26 Au",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             },
             {
                 "filename": "MIL26.006-PBBP-1420-09-4_rev.00 - Pinion Bearing Base Plate.pdf",
                 "rev": "REV 00",
                 "uploaded": "Wed, 26 Au",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             },
             {
                 "filename": "MIL26.006-PBBP-1420-09-4_rev.01 - Pinion Bearing Base Plate.pdf",
                 "rev": "REV 00",
                 "uploaded": "Wed, 16 Se",
+                "status": "latest",
+                "isNew": false
+            },
+            {
+                "filename": "MIL26.006-PBBP-1420-09-4_rev.02 - Pinion Bearing Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 21 Oc",
                 "status": "latest",
                 "isNew": true
             },
@@ -42,14 +49,14 @@
                 "rev": "REV 00",
                 "uploaded": "Wed, 26 Au",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             },
             {
                 "filename": "MIL26.006-TBDB-1420-09-2.2_rev.00 - FE Trun Brg Base Plate.pdf",
                 "rev": "REV 00",
                 "uploaded": "Wed, 26 Au",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             }
         ]
     },
