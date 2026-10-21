@@ -2,12 +2,10 @@ import os
 import re
 import json
 import requests
-from datetime import datetime
-from requests.auth import HTTPBasicAuth
 from urllib.parse import unquote
 from xml.etree import ElementTree as ET
 
-# Pull credentials safely from GitHub Secrets environment variables
+# --- CONFIGURATION (Pulls securely from GitHub Secrets) ---
 WEBDAV_BASE_URL = os.environ.get("NC_URL")
 USERNAME = os.environ.get("NC_USER")
 APP_PASSWORD = os.environ.get("NC_PASS")
@@ -15,7 +13,7 @@ START_PATH = "AllconData/Projects/Clients/"
 
 def get_webdav_folder_contents(url):
     """Performs a PROPFIND request to fetch subfolders and files from Nextcloud."""
-    auth = HTTPBasicAuth(USERNAME, APP_PASSWORD)
+    auth = requests.auth.HTTPBasicAuth(USERNAME, APP_PASSWORD)
     headers = {
         "Depth": "1",
         "Content-Type": "application/xml"
@@ -73,7 +71,6 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
         if not decoded_name or decoded_name in ["Files", "Clients", "Projects", "AllconData"]: 
             continue
 
-        # Construct full sub-URL correctly based on WebDAV href response
         if raw_href.startswith('http'):
             full_sub_url = raw_href
         else:
@@ -85,7 +82,6 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
             continue
 
         if item["is_collection"]:
-            # TARGET RULE: When we hit AFC Drawings or PDF subfolders, extract the actual drawing files
             if "2. AFC Drawings" in decoded_name or "2. PDF" in decoded_name:
                 pdf_files = get_webdav_folder_contents(full_sub_url)
                 drawings = []
@@ -94,11 +90,9 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
                     if not file_item["is_collection"]:
                         filename = unquote(file_item["href"].rstrip('/').split('/')[-1])
                         if filename.lower().endswith(('.pdf', '.dwg')):
-                            # Extract real revision tag (e.g. REV 01, REV 02) via Regex
                             rev_match = re.search(r'(REV\s?\d+|REV[A-Z0-9_-]+)', filename, re.IGNORECASE)
                             rev_tag = rev_match.group(0).upper() if rev_match else "REV 00"
                             
-                            # Format modification timestamp safely
                             mod_date = "Recent"
                             if file_item["last_modified"]:
                                 try:
@@ -120,7 +114,6 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
                         "drawings": drawings
                     })
             else:
-                # Recurse deeper into standard subfolders
                 results.extend(scan_nextcloud_tree(full_sub_url, current_path_str + "/" + decoded_name))
 
     return results
