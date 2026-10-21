@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALLCON - Drawing Revision Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23d9232a'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold' font-size='45'>D</text></svg>">
+    <style>
+        :root {
+            --obsidian-black: #0d0d0d;
+            --obsidian-card: #161616;
+            --obsidian-border: #2a2a2a;
+            --allcon-red: #d9232a;
+            --allcon-red-hover: #ff2a32;
+            --text-light: #f1f1f1;
+            --text-muted: #a0a0a0;
+            --input-bg: #1f1f1f;
+            --alert-bg: rgba(217, 35, 42, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--obsidian-black);
+            color: var(--text-light);
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--obsidian-card);
+            border-bottom: 2px solid var(--allcon-red);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: var(--allcon-red);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #212121;
+            border: 1px solid var(--obsidian-border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+        }
+
+        .status-dot.online { background-color: #4caf50; }
+        .status-dot.offline { background-color: #f44336; }
+
+        .btn-icon {
+            background: var(--input-bg);
+            border: 1px solid var(--obsidian-border);
+            color: var(--text-light);
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: border-color 0.2s;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--allcon-red);
+        }
+
+        main {
+            flex-grow: 1;
+            max-width: 1400px;
+            width: 100%;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--obsidian-card);
+            border: 1px solid var(--obsidian-border);
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+        }
+
+        .metric-card.alert {
+            border-left: 4px solid var(--allcon-red);
+            background: var(--alert-bg);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: white;
+            margin-top: 0.2rem;
+        }
+
+        .project-card {
+            background: var(--obsidian-card);
+            border: 1px solid var(--obsidian-border);
+            border-radius: 6px;
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .project-card.has-update {
+            border: 1px solid var(--allcon-red);
+            box-shadow: 0 0 15px rgba(217, 35, 42, 0.2);
+        }
+
+        .project-header {
+            padding: 1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--obsidian-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .project-path {
+            font-size: 0.75rem;
+            color: var(--allcon-red);
+            font-family: monospace;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .project-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .alert-tag {
+            background: var(--allcon-red);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 0.2rem 0.6rem;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .drawing-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .drawing-table th {
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-muted);
+            text-align: left;
+            padding: 0.6rem 1.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--obsidian-border);
+        }
+
+        .drawing-table td {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--obsidian-border);
+        }
+
+        .drawing-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rev-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-weight: 800;
+            font-size: 0.75rem;
+        }
+
+        .rev-badge.latest {
+            background: rgba(76, 175, 80, 0.2);
+            color: #81c784;
+            border: 1px solid #388e3c;
+        }
+
+        .rev-badge.superseded {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--obsidian-border);
+            text-decoration: line-through;
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: var(--obsidian-card);
+            border: 1px solid var(--obsidian-border);
+            border-top: 3px solid var(--allcon-red);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 6px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--obsidian-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .modal-header h3 {
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: var(--input-bg);
+            border: 1px solid var(--obsidian-border);
+            color: white;
+            border-radius: 4px;
+            outline: none;
+            font-size: 0.85rem;
+        }
+
+        .form-input:focus {
+            border-color: var(--allcon-red);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-save {
+            background: var(--allcon-red);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--obsidian-border);
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        footer {
+            background-color: var(--obsidian-card);
+            border-top: 1px solid var(--obsidian-border);
+            color: var(--text-muted);
+            text-align: center;
+            padding: 1.25rem;
+            margin-top: auto;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-container">
+            <a href="#" class="brand-logo">
+                <img src="ALLCON-Logo.jpg" alt="ALLCON" class="logo-img">
+                <div class="brand-text">
+                    <span class="brand-subtitle">Drawing Revision & Alert Hub</span>
+                </div>
+            </a>
+            <div class="header-actions">
+                <div class="status-badge">
+                    <span class="status-dot" id="connDot"></span>
+                    <span id="connText">Demo Mode</span>
+                </div>
+                <button class="btn-icon" onclick="promptSettingsPin()">⚙️ Server Config</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- METRICS SUMMARY -->
+        <div class="summary-bar">
+            <div class="metric-card alert">
+                <div class="metric-label">New / Revised Drawings</div>
+                <div class="metric-value" id="countRevised">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Active Projects Monitored</div>
+                <div class="metric-value" id="countProjects">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Indexed Drawings</div>
+                <div class="metric-value" id="countTotalDrawings">0</div>
+            </div>
+        </div>
+
+        <!-- PROJECT DRAWING CARDS -->
+        <div id="projectContainer">
+            <!-- Dynamic project cards render here -->
+        </div>
+    </main>
+
+    <!-- CONFIGURATION SETTINGS MODAL -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Server & WebDAV Configuration</h3>
+                <button onclick="closeConfigModal()" style="background:none; border:none; color:white; cursor:pointer;">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Nextcloud Server / WebDAV URL</label>
+                <input type="text" id="cfgUrl" class="form-input" placeholder="e.g. https://nextcloud.allcon.co.za/remote.php/dav/files/user/">
+            </div>
+            <div class="form-group">
+                <label>Root Search Path</label>
+                <input type="text" id="cfgPath" class="form-input" placeholder="AllconData/Projects/Client/">
+            </div>
+            <div class="form-group">
+                <label>Nextcloud Username</label>
+                <input type="text" id="cfgUser" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>App Password / Token</label>
+                <input type="password" id="cfgPass" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Polling Interval (Seconds)</label>
+                <input type="number" id="cfgInterval" class="form-input" value="30">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeConfigModal()">Cancel</button>
+                <button class="btn-save" onclick="saveConfiguration()">Test & Save Connection</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>ALLCON Fabrication & Engineering &copy; 2026 | Procurement Drawing Quality Control</p>
+    </footer>
+
+    <script>
+        // CONFIGURATION STORAGE
+        let config = {
+            url: localStorage.getItem('nc_url') || '',
+            path: localStorage.getItem('nc_path') || 'AllconData/Projects/Client/',
+            user: localStorage.getItem('nc_user') || '',
+            pass: localStorage.getItem('nc_pass') || '',
+            interval: parseInt(localStorage.getItem('nc_interval')) || 30,
+            pin: localStorage.getItem('nc_pin') || '1234'
+        };
+
+        // TRIAL DATA PRE-MAPPED TO YOUR EXACT NCP 2026 / WEILY STRUCTURE
+        let projectsData = [
+            {
+                client: "NCP 2026",
+                project: "Weily MIL26.007 > GGG SM (NEW)",
+                path: "AllconData/Projects/Client/NCP 2026/Weily MIL26.007/.../2. AFC Drawings/2. PDF",
+                hasNewRevision: true,
+                drawings: [
+                    { filename: "GGG_SM_ASSY_REV02.pdf", rev: "REV 02", uploaded: "Today, 11:15", status: "latest", isNew: true },
+                    { filename: "GGG_SM_ASSY_REV01.pdf", rev: "REV 01", uploaded: "2026-09-10", status: "superseded", isNew: false }
+                ]
+            },
+            {
+                client: "NCP 2026",
+                project: "Weily MIL26.007 > BASEPLATES",
+                path: "AllconData/Projects/Client/NCP 2026/Weily MIL26.007/.../2. AFC Drawings/2. PDF",
+                hasNewRevision: false,
+                drawings: [
+                    { filename: "WEILY_BP_DET_REV01.pdf", rev: "REV 01", uploaded: "2026-10-02", status: "latest", isNew: false }
+                ]
+            }
+        ];
+
+        function promptSettingsPin() {
+            const pin = prompt("Enter Security PIN to access Server Settings:");
+            if (pin === config.pin) {
+                document.getElementById('cfgUrl').value = config.url;
+                document.getElementById('cfgPath').value = config.path;
+                document.getElementById('cfgUser').value = config.user;
+                document.getElementById('cfgPass').value = config.pass;
+                document.getElementById('cfgInterval').value = config.interval;
+                document.getElementById('configModal').classList.add('active');
+            } else if (pin !== null) {
+                alert("Incorrect PIN.");
+            }
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        function saveConfiguration() {
+            config.url = document.getElementById('cfgUrl').value.trim();
+            config.path = document.getElementById('cfgPath').value.trim();
+            config.user = document.getElementById('cfgUser').value.trim();
+            config.pass = document.getElementById('cfgPass').value.trim();
+            config.interval = parseInt(document.getElementById('cfgInterval').value) || 30;
+
+            localStorage.setItem('nc_url', config.url);
+            localStorage.setItem('nc_path', config.path);
+            localStorage.setItem('nc_user', config.user);
+            localStorage.setItem('nc_pass', config.pass);
+            localStorage.setItem('nc_interval', config.interval);
+
+            closeConfigModal();
+            updateConnectionStatus(true, "Connected (Live)");
+            renderDashboard();
+        }
+
+        function updateConnectionStatus(isOnline, text) {
+            const dot = document.getElementById('connDot');
+            const txt = document.getElementById('connText');
+            dot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
+            txt.innerText = text;
+        }
+
+        function renderDashboard() {
+            const container = document.getElementById('projectContainer');
+            container.innerHTML = '';
+
+            let revisedCount = 0;
+            let totalDrawings = 0;
+
+            // Sort projects so new revisions float to top
+            projectsData.sort((a, b) => b.hasNewRevision - a.hasNewRevision);
+
+            projectsData.forEach(p => {
+                if (p.hasNewRevision) revisedCount++;
+                totalDrawings += p.drawings.length;
+
+                let drawingsHtml = p.drawings.map(d => `
+                    <tr>
+                        <td><strong>${d.filename}</strong></td>
+                        <td><span class="rev-badge ${d.status}">${d.rev}</span></td>
+                        <td>${d.uploaded}</td>
+                        <td>${d.isNew ? '<strong style="color:var(--allcon-red);">NEW AMENDMENT - DO NOT USE REV 01</strong>' : 'Up to Date'}</td>
+                    </tr>
+                `).join('');
+
+                container.innerHTML += `
+                    <div class="project-card ${p.hasNewRevision ? 'has-update' : ''}">
+                        <div class="project-header">
+                            <div class="project-title-group">
+                                <div>
+                                    <div class="project-path">${p.path}</div>
+                                    <div class="project-name">${p.project}</div>
+                                </div>
+                            </div>
+                            ${p.hasNewRevision ? '<span class="alert-tag">⚠️ NEW REV ISSUED</span>' : ''}
+                        </div>
+                        <table class="drawing-table">
+                            <thead>
+                                <tr>
+                                    <th>Drawing File</th>
+                                    <th>Revision</th>
+                                    <th>Date Modified</th>
+                                    <th>Procurement Alert</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${drawingsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+
+            document.getElementById('countRevised').innerText = revisedCount;
+            document.getElementById('countProjects').innerText = projectsData.length;
+            document.getElementById('countTotalDrawings').innerText = totalDrawings;
+        }
+
+        window.onload = function() {
+            if(config.url) {
+                updateConnectionStatus(true, "Connected");
+            } else {
+                updateConnectionStatus(false, "Demo Mode (Configure Server)");
+            }
+            renderDashboard();
+        };
+    </script>
+</body>
+</html>
