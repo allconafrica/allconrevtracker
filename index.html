@@ -53,7 +53,7 @@
         .header-right {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
         .status-badge {
             background: rgba(52, 199, 89, 0.15);
@@ -72,9 +72,20 @@
             font-size: 0.85rem;
             cursor: pointer;
             transition: background 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .config-btn:hover {
-            background: #333;
+        .config-btn:hover { background: #333; }
+
+        .bell-counter {
+            background: var(--accent-red);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
         }
 
         .metrics-grid {
@@ -89,15 +100,8 @@
             border-radius: 8px;
             padding: 20px;
         }
-        .metric-card h3 {
-            margin: 0 0 10px 0;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        .metric-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-        }
+        .metric-card h3 { margin: 0 0 10px 0; font-size: 0.75rem; color: var(--text-muted); }
+        .metric-card .value { font-size: 2rem; font-weight: 700; }
         
         .project-section {
             background: var(--card-bg);
@@ -115,9 +119,7 @@
             cursor: pointer;
             user-select: none;
         }
-        .project-header:hover {
-            background: #2a2a2a;
-        }
+        .project-header:hover { background: #2a2a2a; }
         .project-path {
             font-family: monospace;
             font-size: 0.9rem;
@@ -127,16 +129,9 @@
             align-items: center;
             gap: 10px;
         }
-        .toggle-icon {
-            font-size: 0.8rem;
-            transition: transform 0.3s;
-        }
-        .project-section.collapsed .toggle-icon {
-            transform: rotate(-90deg);
-        }
-        .project-section.collapsed .drawing-table-container {
-            display: none;
-        }
+        .toggle-icon { font-size: 0.8rem; transition: transform 0.3s; }
+        .project-section.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .project-section.collapsed .drawing-table-container { display: none; }
         .badge-filtered {
             background: var(--accent-green);
             color: #000;
@@ -146,36 +141,11 @@
             font-weight: bold;
         }
         
-        .drawing-table-container {
-            padding: 0 20px 15px 20px;
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            margin-top: 10px;
-        }
-        th {
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
-            padding: 10px;
-        }
-        td {
-            padding: 12px 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.9rem;
-        }
-        .rev-tag {
-            background: rgba(52, 199, 89, 0.15);
-            color: var(--accent-green);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.8rem;
-        }
+        .drawing-table-container { padding: 0 20px 15px 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
+        th { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding: 10px; }
+        td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        .rev-tag { background: rgba(52, 199, 89, 0.15); color: var(--accent-green); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; }
         
         .new-alert-badge {
             background: var(--accent-red);
@@ -187,18 +157,10 @@
             margin-left: 8px;
             animation: pulse 1.5s infinite;
         }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
-        .status-verified {
-            color: var(--accent-green);
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .status-verified { color: var(--accent-green); font-weight: 600; font-size: 0.85rem; }
 
-        /* Modal Overlay */
+        /* Modal Overlays */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -213,10 +175,25 @@
             border: 1px solid var(--border-color);
             padding: 25px;
             border-radius: 8px;
-            width: 400px;
+            width: 480px;
             max-width: 90%;
         }
         .modal h2 { margin-top: 0; font-size: 1.1rem; color: var(--accent-red); }
+        .history-list {
+            max-height: 280px;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            background: #121212;
+        }
+        .history-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+        }
+        .history-item:last-child { border-bottom: none; }
         .modal textarea, .modal input[type="password"] {
             width: 100%;
             background: #121212; border: 1px solid var(--border-color);
@@ -237,6 +214,10 @@
         <div class="header-right">
             <div class="status-badge">● Live Feed Connected</div>
             <button class="config-btn" onclick="openConfig()">⚙ Data Config</button>
+            <button class="config-btn" onclick="openHistory()">
+                🔔 Notice History
+                <span id="unread-count" class="bell-counter" style="display:none;">0</span>
+            </button>
         </div>
     </header>
 
@@ -253,6 +234,20 @@
 
     <div id="content-container">
         <p style="color: var(--text-muted); text-align: center; padding: 40px;">Loading live Nextcloud data...</p>
+    </div>
+
+    <!-- Notice History Modal -->
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal">
+            <h2>🔔 Revision Notice History</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Log of recent revision arrivals and project updates:</p>
+            <div class="history-list" id="history-list-content">
+                <p style="color: var(--text-muted); text-align: center;">No history logs recorded yet.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="config-btn" onclick="closeHistory()">Close</button>
+            </div>
+        </div>
     </div>
 
     <!-- Password Auth Modal -->
@@ -284,6 +279,7 @@
 
     <script>
         const ADMIN_PIN = "1234";
+        let historyLogs = [];
 
         async function loadDrawingData() {
             try {
@@ -299,6 +295,9 @@
             const container = document.getElementById('content-container');
             container.innerHTML = '';
             let totalDrawingsCount = 0;
+            let totalNewCount = 0;
+            historyLogs = [];
+
             document.getElementById('total-packages').innerText = data.length;
 
             if (data.length === 0) {
@@ -313,6 +312,18 @@
                 
                 const hasNewDrawing = pkg.drawings.some(d => d.isNew);
                 section.className = hasNewDrawing ? 'project-section' : 'project-section collapsed';
+
+                pkg.drawings.forEach(d => {
+                    if (d.isNew) {
+                        totalNewCount++;
+                        historyLogs.push({
+                            filename: d.filename,
+                            rev: d.rev,
+                            path: pkg.path,
+                            uploaded: d.uploaded
+                        });
+                    }
+                });
 
                 section.innerHTML = `
                     <div class="project-header" onclick="toggleSection(this)">
@@ -350,11 +361,40 @@
                 `;
                 container.appendChild(section);
             });
+
             document.getElementById('total-drawings').innerText = totalDrawingsCount;
+
+            // Update Bell Counter Badge
+            const counterEl = document.getElementById('unread-count');
+            if (totalNewCount > 0) {
+                counterEl.innerText = totalNewCount;
+                counterEl.style.display = 'inline-block';
+            } else {
+                counterEl.style.display = 'none';
+            }
         }
 
         function toggleSection(headerEl) {
             headerEl.parentElement.classList.toggle('collapsed');
+        }
+
+        function openHistory() {
+            const listEl = document.getElementById('history-list-content');
+            if (historyLogs.length === 0) {
+                listEl.innerHTML = `<p style="color: var(--text-muted); text-align: center;">No active new revision alerts.</p>`;
+            } else {
+                listEl.innerHTML = historyLogs.map(item => `
+                    <div class="history-item">
+                        <strong style="color: var(--accent-red);">${item.rev}</strong> - ${item.filename}<br>
+                        <span style="color: var(--text-muted); font-size: 0.75rem;">📁 ${item.path} | Date: ${item.uploaded}</span>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('history-modal').style.display = 'flex';
+        }
+
+        function closeHistory() {
+            document.getElementById('history-modal').style.display = 'none';
         }
 
         function openConfig() {
