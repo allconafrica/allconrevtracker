@@ -1,0 +1,41 @@
+[
+  {
+    "id": "WEILY",
+    "client": "NCP 2026",
+    "project": "Weily MIL26.007 > GGG SM (NEW)",
+    "path": "AllconData/Projects/Client/NCP 2026/Weily MIL26.007/.../2. AFC Drawings/2. PDF",
+    "hasNewRevision": true,
+    "drawings": [
+      {
+        "filename": "GGG_SM_ASSY_REV02.pdf",
+        "rev": "REV 02",
+        "uploaded": "2026-10-21",
+        "status": "latest",
+        "isNew": true
+      },
+      {
+        "filename": "GGG_SM_ASSY_REV01.pdf",
+        "rev": "REV 01",
+        "uploaded": "2026-09-10",
+        "status": "superseded",
+        "isNew": false
+      }
+    ]
+  },
+  {
+    "id": "MONGWALU",
+    "client": "WMSE",
+    "project": "Mongwalu > STRUCTURAL LINING",
+    "path": "AllconData/Projects/Client/WMSE/Mongwalu/.../2. AFC Drawings/2. PDF",
+    "hasNewRevision": false,
+    "drawings": [
+      {
+        "filename": "MONGWALU_CHUTE_REV01.pdf",
+        "rev": "REV 01",
+        "uploaded": "2026-10-18",
+        "status": "latest",
+        "isNew": false
+      }
+    ]
+  }
+]
