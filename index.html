@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALLCON - Drawing Revision Tracker</title>
+    <title>ALLCON - Drawing Revision & Alert Hub</title>
     <style>
         :root {
             --obsidian-black: #0d0d0d;
@@ -30,25 +30,19 @@
         main { flex-grow: 1; max-width: 1400px; width: 100%; margin: 1.5rem auto; padding: 0 1.5rem; }
         .summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
         .metric-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); padding: 1rem 1.25rem; border-radius: 6px; }
-        .metric-card.alert { border-left: 4px solid var(--allcon-red); background: var(--alert-bg); }
         .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
         .metric-value { font-size: 1.6rem; font-weight: 800; color: white; margin-top: 0.2rem; }
 
-        .project-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; transition: border-color 0.3s ease; }
-        .project-card.has-update { border: 1px solid var(--allcon-red); box-shadow: 0 0 15px rgba(217, 35, 42, 0.2); }
+        .project-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; }
         .project-header { padding: 1rem 1.25rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--obsidian-border); display: flex; justify-content: space-between; align-items: center; }
         .project-path { font-size: 0.75rem; color: var(--allcon-red); font-family: monospace; font-weight: 700; word-break: break-all; margin-bottom: 0.2rem; }
-        .project-name { font-size: 1.1rem; font-weight: 800; color: white; }
-        .alert-tag { background: var(--allcon-red); color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .alert-tag { background: #2e7d32; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; }
 
         .drawing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .drawing-table th { background: rgba(0, 0, 0, 0.3); color: var(--text-muted); text-align: left; padding: 0.6rem 1.25rem; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--obsidian-border); }
         .drawing-table td { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--obsidian-border); }
 
-        .rev-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 800; font-size: 0.75rem; }
-        .rev-badge.latest { background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid #388e3c; }
-        .rev-badge.superseded { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); text-decoration: line-through; border: 1px solid var(--obsidian-border); }
+        .rev-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 800; font-size: 0.75rem; background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid #388e3c; }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
@@ -73,25 +67,21 @@
             <div style="display: flex; gap: 1rem; align-items: center;">
                 <div class="status-badge">
                     <span class="status-dot" id="connDot"></span>
-                    <span id="connText">Loading...</span>
+                    <span id="connText">Syncing...</span>
                 </div>
-                <button class="btn-icon" onclick="promptSettingsPin()">⚙️ Data Endpoint Config</button>
+                <button class="btn-icon" onclick="promptSettingsPin()">⚙️ Data Config</button>
             </div>
         </div>
     </header>
 
     <main>
         <div class="summary-bar">
-            <div class="metric-card alert">
-                <div class="metric-label">New / Revised Drawings</div>
-                <div class="metric-value" id="countRevised">0</div>
-            </div>
             <div class="metric-card">
                 <div class="metric-label">Monitored AFC Packages</div>
                 <div class="metric-value" id="countProjects">0</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">Total AFC Drawings</div>
+                <div class="metric-label">Total AFC Drawings Indexed</div>
                 <div class="metric-value" id="countTotalDrawings">0</div>
             </div>
         </div>
@@ -104,12 +94,12 @@
         <div class="modal-box">
             <h3 style="margin-bottom: 1rem; color: white;">Data Source Configuration</h3>
             <div class="form-group">
-                <label>JSON Data Source URL</label>
-                <input type="text" id="cfgDataUrl" class="form-input" placeholder="drawing-data.json">
+                <label>JSON Data Source Path</label>
+                <input type="text" id="cfgDataUrl" class="form-input" value="drawing-data.json">
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeConfigModal()">Cancel</button>
-                <button class="btn-save" onclick="saveConfiguration()">Save & Refresh</button>
+                <button class="btn-save" onclick="saveConfiguration()">Reload Data</button>
             </div>
         </div>
     </div>
@@ -119,8 +109,6 @@
             dataUrl: localStorage.getItem('nc_data_url') || 'drawing-data.json',
             pin: localStorage.getItem('nc_pin') || '1234'
         };
-
-        let projectsData = [];
 
         function promptSettingsPin() {
             const pin = prompt("Enter Security PIN:");
@@ -133,6 +121,7 @@
         }
 
         function closeConfigModal() {
+            document.getElementById('configModal').classList.remove('action');
             document.getElementById('configModal').classList.remove('active');
         }
 
@@ -140,7 +129,7 @@
             config.dataUrl = document.getElementById('cfgDataUrl').value.trim() || 'drawing-data.json';
             localStorage.setItem('nc_data_url', config.dataUrl);
             closeConfigModal();
-            loadJsonData();
+            loadDashboardData();
         }
 
         function updateStatus(online, msg) {
@@ -148,60 +137,63 @@
             document.getElementById('connText').innerText = msg;
         }
 
-        async function loadJsonData() {
-            updateStatus(false, "Syncing Data...");
+        async function loadDashboardData() {
+            updateStatus(false, "Reading Data...");
             try {
                 const response = await fetch(config.dataUrl + '?t=' + Date.now());
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
-                projectsData = await response.json();
-                updateStatus(true, "JSON Feed Active");
-                renderDashboard();
+                const projectsData = await response.json();
+                updateStatus(true, "Live Feed Connected");
+                renderDashboard(projectsData);
             } catch (err) {
-                console.error("JSON Fetch Error:", err);
-                updateStatus(false, "Fetch Error");
+                console.error("Data Load Error:", err);
+                updateStatus(false, "Waiting for sync file...");
+                document.getElementById('projectContainer').innerHTML = `
+                    <div style="text-align:center; padding: 3rem; color: var(--text-muted);">
+                        No <code>drawing-data.json</code> found yet. Trigger your GitHub Action to generate the live data feed.
+                    </div>`;
             }
         }
 
-        function renderDashboard() {
+        function renderDashboard(projectsData) {
             const container = document.getElementById('projectContainer');
             container.innerHTML = '';
 
-            let revisedCount = 0;
+            if (!projectsData || projectsData.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-muted);">No AFC packages found in the sync output. Check your folder paths.</div>`;
+                return;
+            }
+
             let totalDrawings = 0;
 
-            // Sort so projects with new revisions float to top
-            projectsData.sort((a, b) => b.hasNewRevision - a.hasNewRevision);
-
             projectsData.forEach(p => {
-                if (p.hasNewRevision) revisedCount++;
                 totalDrawings += p.drawings.length;
 
                 let drawingsHtml = p.drawings.map(d => `
                     <tr>
                         <td><strong>${d.filename}</strong></td>
-                        <td><span class="rev-badge ${d.status}">${d.rev}</span></td>
+                        <td><span class="rev-badge">${d.rev}</span></td>
                         <td>${d.uploaded}</td>
-                        <td>${d.isNew ? '<strong style="color:var(--allcon-red);">⚠️ NEW REVISION - DO NOT USE REV 01</strong>' : '<span style="color:#81c784;">AFC VERIFIED</span>'}</td>
+                        <td><strong style="color:#81c784;">AFC VERIFIED</strong></td>
                     </tr>
                 `).join('');
 
                 container.innerHTML += `
-                    <div class="project-card ${p.hasNewRevision ? 'has-update' : ''}">
+                    <div class="project-card">
                         <div class="project-header">
                             <div>
                                 <div class="project-path">${p.path}</div>
-                                <div class="project-name">${p.client} › ${p.project}</div>
                             </div>
-                            ${p.hasNewRevision ? '<span class="alert-tag">⚠️ NEW REV ISSUED</span>' : '<span class="alert-tag" style="background:#2e7d32; animation:none;">AFC FILTERED</span>'}
+                            <span class="alert-tag">AFC Filtered</span>
                         </div>
                         <table class="drawing-table">
                             <thead>
                                 <tr>
-                                    <th>AFC Drawing File</th>
+                                    <th>Drawing File Name</th>
                                     <th>Revision</th>
                                     <th>Last Modified</th>
-                                    <th>Procurement Status</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>${drawingsHtml}</tbody>
@@ -210,13 +202,12 @@
                 `;
             });
 
-            document.getElementById('countRevised').innerText = revisedCount;
             document.getElementById('countProjects').innerText = projectsData.length;
             document.getElementById('countTotalDrawings').innerText = totalDrawings;
         }
 
         window.onload = function() {
-            loadJsonData();
+            loadDashboardData();
         };
     </script>
 </body>
