@@ -92,8 +92,12 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
         else:
             filename = decoded_name
             if filename.lower().endswith(('.pdf', '.dwg')):
-                rev_match = re.search(r'(REV\s?\d+|REV[A-Z0-9_-]+)', filename, re.IGNORECASE)
-                rev_tag = rev_match.group(0).upper() if rev_match else "REV 00"
+                # Improved regex to handle rev.00, rev_01, rev02, etc.
+                rev_match = re.search(r'REV[\s._-]?([A-Z0-9]+)', filename, re.IGNORECASE)
+                if rev_match:
+                    rev_tag = f"REV {rev_match.group(1).upper()}"
+                else:
+                    rev_tag = "REV 00"
                 
                 mod_date = "Recent"
                 if item["last_modified"]:
@@ -204,7 +208,6 @@ if __name__ == "__main__":
             pass
 
     if newly_detected:
-        # Prepend new discoveries to the top of the history log
         for item in newly_detected:
             history_log.insert(0, item)
         
