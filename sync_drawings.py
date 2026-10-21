@@ -7,12 +7,11 @@ from requests.auth import HTTPBasicAuth
 from urllib.parse import unquote
 from xml.etree import ElementTree as ET
 
-# --- CONFIGURATION ---
-# Replace with your actual Nextcloud WebDAV base URL and credentials
-WEBDAV_BASE_URL = "https://your-provider.com/remote.php/dav/files/your-username/"
+# Pull credentials safely from GitHub Secrets environment variables
+WEBDAV_BASE_URL = os.environ.get("NC_URL")
+USERNAME = os.environ.get("NC_USER")
+APP_PASSWORD = os.environ.get("NC_PASS")
 START_PATH = "AllconData/Projects/Clients/"
-USERNAME = "your-username"
-APP_PASSWORD = "your-app-password"
 
 def get_webdav_folder_contents(url):
     """Performs a PROPFIND request to fetch subfolders and files from Nextcloud."""
