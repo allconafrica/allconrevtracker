@@ -3,6 +3,7 @@ import re
 import json
 import requests
 import smtplib
+from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from urllib.parse import unquote
@@ -134,7 +135,7 @@ def send_email_alerts(new_items):
     body = "The following new drawings or revisions were indexed from Nextcloud:\n\n"
     for item in new_items:
         body += f"• [{item['path']}] {item['filename']} ({item['rev']})\n"
-    body += "\nAccess your dashboard to view the full revision history."
+    body += "\nAccess your dashboard to view the full long-term revision history."
 
     msg = MIMEMultipart()
     msg['From'] = SMTP_USER
@@ -143,8 +144,7 @@ def send_email_alerts(new_items):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
         server.login(SMTP_USER, SMTP_PASS)
         server.sendmail(SMTP_USER, recipients, msg.as_string())
         server.quit()
@@ -173,20 +173,45 @@ if __name__ == "__main__":
     scanned_data = scan_nextcloud_tree(start_url, "AllconData")
 
     newly_detected = []
+    timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
     for pkg in scanned_data:
         for d in pkg["drawings"]:
             key = f"{pkg['path']}/{d['filename']}"
             if key not in existing_drawings_map or existing_drawings_map[key] != d["rev"]:
                 d["isNew"] = True
-                newly_detected.append({"path": pkg["path"], "filename": d["filename"], "rev": d["rev"]})
+                newly_detected.append({
+                    "timestamp": timestamp_str,
+                    "path": pkg["path"],
+                    "filename": d["filename"],
+                    "rev": d["rev"],
+                    "uploaded": d["uploaded"]
+                })
             else:
-                d["isNew"] = False  # Automatically clear the NEW badge on subsequent runs
+                d["isNew"] = False
 
+    # Save current dashboard snapshot
     with open("drawing-data.json", "w", encoding="utf-8") as f:
         json.dump(scanned_data, f, indent=4, ensure_ascii=False)
 
+    # Load and append to permanent long-term history file
+    history_log = []
+    if os.path.exists("revision-history.json"):
+        try:
+            with open("revision-history.json", "r", encoding="utf-8") as f:
+                history_log = json.load(f)
+        except:
+            pass
+
     if newly_detected:
-        print(f"Detected {len(newly_detected)} new or updated drawings. Sending alerts...")
+        # Prepend new discoveries to the top of the history log
+        for item in newly_detected:
+            history_log.insert(0, item)
+        
+        with open("revision-history.json", "w", encoding="utf-8") as f:
+            json.dump(history_log, f, indent=4, ensure_ascii=False)
+
+        print(f"Detected {len(newly_detected)} new or updated drawings. Updating history and sending alerts...")
         send_email_alerts(newly_detected)
     else:
         print("Scan complete. No new revisions found.")
