@@ -3,7 +3,7 @@ name: Sync Nextcloud Drawings
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '10 * * * *'
 
 permissions:
   contents: write
