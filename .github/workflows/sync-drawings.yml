@@ -1,9 +1,9 @@
 name: Sync Nextcloud Drawings
 
 on:
-  workflow_dispatch: # Allows you to manually trigger it anytime via a button
+  workflow_dispatch:
   schedule:
-    - cron: '0 * * * *' # Runs automatically every hour
+    - cron: '0 * * * *'
 
 jobs:
   sync:
