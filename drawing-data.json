@@ -1,5 +1,59 @@
 [
     {
+        "path": "AllconData/PROJECTS/CLIENTS/NCP 2026/MONGBWALU MIL26.006/2. RFQ Enquiries/BASEPLATES/2. Drawings/2. AFC Drawings/2. PDF",
+        "drawings": [
+            {
+                "filename": "MIL26.006-BPBP-1420-09-5_rev.00 - Barring Unit Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 26 Au",
+                "status": "latest",
+                "isNew": true
+            },
+            {
+                "filename": "MIL26.006-DMBP-1420-09-1_rev.00 - Drive Motor Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 26 Au",
+                "status": "latest",
+                "isNew": true
+            },
+            {
+                "filename": "MIL26.006-MGBP-1420-09-3_rev.00 - Main Gearbox Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 26 Au",
+                "status": "latest",
+                "isNew": true
+            },
+            {
+                "filename": "MIL26.006-PBBP-1420-09-4_rev.00 - Pinion Bearing Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 26 Au",
+                "status": "latest",
+                "isNew": true
+            },
+            {
+                "filename": "MIL26.006-PBBP-1420-09-4_rev.01 - Pinion Bearing Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 16 Se",
+                "status": "latest",
+                "isNew": true
+            },
+            {
+                "filename": "MIL26.006-TBDB-1420-09-2.1_rev.00 - DE Trun Brg Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 26 Au",
+                "status": "latest",
+                "isNew": true
+            },
+            {
+                "filename": "MIL26.006-TBDB-1420-09-2.2_rev.00 - FE Trun Brg Base Plate.pdf",
+                "rev": "REV 00",
+                "uploaded": "Wed, 26 Au",
+                "status": "latest",
+                "isNew": true
+            }
+        ]
+    },
+    {
         "path": "AllconData/PROJECTS/CLIENTS/NCP 2026/MONGBWALU MIL26.006/2. RFQ Enquiries/GGG/2. Drawings/2. AFC Drawings/2. PDF",
         "drawings": [
             {
