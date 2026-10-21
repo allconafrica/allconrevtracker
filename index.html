@@ -175,12 +175,12 @@
             border: 1px solid var(--border-color);
             padding: 25px;
             border-radius: 8px;
-            width: 480px;
+            width: 520px;
             max-width: 90%;
         }
         .modal h2 { margin-top: 0; font-size: 1.1rem; color: var(--accent-red); }
         .history-list {
-            max-height: 280px;
+            max-height: 320px;
             overflow-y: auto;
             margin: 15px 0;
             border: 1px solid var(--border-color);
@@ -189,7 +189,7 @@
             background: #121212;
         }
         .history-item {
-            padding: 8px 0;
+            padding: 10px 0;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             font-size: 0.85rem;
         }
@@ -239,10 +239,10 @@
     <!-- Notice History Modal -->
     <div id="history-modal" class="modal-overlay">
         <div class="modal">
-            <h2>🔔 Revision Notice History</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Log of recent revision arrivals and project updates:</p>
+            <h2>🔔 Permanent Revision Audit History</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Chronological log of all recorded drawing revisions:</p>
             <div class="history-list" id="history-list-content">
-                <p style="color: var(--text-muted); text-align: center;">No history logs recorded yet.</p>
+                <p style="color: var(--text-muted); text-align: center;">Loading history log...</p>
             </div>
             <div class="modal-actions">
                 <button class="config-btn" onclick="closeHistory()">Close</button>
@@ -279,7 +279,6 @@
 
     <script>
         const ADMIN_PIN = "1234";
-        let historyLogs = [];
 
         async function loadDrawingData() {
             try {
@@ -296,7 +295,6 @@
             container.innerHTML = '';
             let totalDrawingsCount = 0;
             let totalNewCount = 0;
-            historyLogs = [];
 
             document.getElementById('total-packages').innerText = data.length;
 
@@ -316,12 +314,6 @@
                 pkg.drawings.forEach(d => {
                     if (d.isNew) {
                         totalNewCount++;
-                        historyLogs.push({
-                            filename: d.filename,
-                            rev: d.rev,
-                            path: pkg.path,
-                            uploaded: d.uploaded
-                        });
                     }
                 });
 
@@ -364,7 +356,7 @@
 
             document.getElementById('total-drawings').innerText = totalDrawingsCount;
 
-            // Update Bell Counter Badge
+            // Update Bell Counter Badge for active new unacknowledged items
             const counterEl = document.getElementById('unread-count');
             if (totalNewCount > 0) {
                 counterEl.innerText = totalNewCount;
@@ -378,19 +370,35 @@
             headerEl.parentElement.classList.toggle('collapsed');
         }
 
-        function openHistory() {
+        async function openHistory() {
             const listEl = document.getElementById('history-list-content');
-            if (historyLogs.length === 0) {
-                listEl.innerHTML = `<p style="color: var(--text-muted); text-align: center;">No active new revision alerts.</p>`;
-            } else {
-                listEl.innerHTML = historyLogs.map(item => `
-                    <div class="history-item">
-                        <strong style="color: var(--accent-red);">${item.rev}</strong> - ${item.filename}<br>
-                        <span style="color: var(--text-muted); font-size: 0.75rem;">📁 ${item.path} | Date: ${item.uploaded}</span>
-                    </div>
-                `).join('');
-            }
+            listEl.innerHTML = `<p style="color: var(--text-muted); text-align: center;">Loading permanent history log...</p>`;
             document.getElementById('history-modal').style.display = 'flex';
+
+            try {
+                const res = await fetch('revision-history.json?t=' + new Date().getTime());
+                if (res.ok) {
+                    const logs = await res.json();
+                    if (logs.length === 0) {
+                        listEl.innerHTML = `<p style="color: var(--text-muted); text-align: center;">No history logs recorded yet.</p>`;
+                    } else {
+                        listEl.innerHTML = logs.map(item => `
+                            <div class="history-item">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <strong style="color: var(--accent-red);">${item.rev}</strong>
+                                    <span style="color: var(--text-muted); font-size: 0.75rem;">📅 ${item.timestamp || 'Recent'}</span>
+                                </div>
+                                <div style="font-weight: 500;">${item.filename}</div>
+                                <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">📁 ${item.path}</div>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    listEl.innerHTML = `<p style="color: var(--text-muted); text-align: center;">No long-term history file found yet.</p>`;
+                }
+            } catch (e) {
+                listEl.innerHTML = `<p style="color: var(--accent-red); text-align: center;">Error fetching history log.</p>`;
+            }
         }
 
         function closeHistory() {
