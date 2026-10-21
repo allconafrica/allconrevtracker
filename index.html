@@ -37,7 +37,7 @@
         .project-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; transition: border-color 0.3s ease; }
         .project-card.has-update { border: 1px solid var(--allcon-red); box-shadow: 0 0 15px rgba(217, 35, 42, 0.2); }
         .project-header { padding: 1rem 1.25rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--obsidian-border); display: flex; justify-content: space-between; align-items: center; }
-        .project-path { font-size: 0.75rem; color: var(--allcon-red); font-family: monospace; font-weight: 700; }
+        .project-path { font-size: 0.75rem; color: var(--allcon-red); font-family: monospace; font-weight: 700; word-break: break-all; margin-bottom: 0.2rem; }
         .project-name { font-size: 1.1rem; font-weight: 800; color: white; }
         .alert-tag { background: var(--allcon-red); color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
@@ -151,7 +151,6 @@
         async function loadJsonData() {
             updateStatus(false, "Syncing Data...");
             try {
-                // Fetch JSON data with cache-busting timestamp
                 const response = await fetch(config.dataUrl + '?t=' + Date.now());
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
@@ -192,7 +191,7 @@
                         <div class="project-header">
                             <div>
                                 <div class="project-path">${p.path}</div>
-                                <div class="project-name">${p.project}</div>
+                                <div class="project-name">${p.client} › ${p.project}</div>
                             </div>
                             ${p.hasNewRevision ? '<span class="alert-tag">⚠️ NEW REV ISSUED</span>' : '<span class="alert-tag" style="background:#2e7d32; animation:none;">AFC FILTERED</span>'}
                         </div>
