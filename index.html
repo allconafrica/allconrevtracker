@@ -2,192 +2,124 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALLCON - Drawing Revision & Alert Hub</title>
+    <title>ALLCON | Drawing Revision & Alert Hub</title>
     <style>
         :root {
-            --obsidian-black: #0d0d0d;
-            --obsidian-card: #161616;
-            --obsidian-border: #2a2a2a;
-            --allcon-red: #d9232a;
-            --text-light: #f1f1f1;
-            --text-muted: #a0a0a0;
-            --input-bg: #1f1f1f;
-            --alert-bg: rgba(217, 35, 42, 0.15);
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --border-color: #2c2c2c;
+            --accent-red: #ff3b30;
+            --accent-green: #34c759;
+            --text-main: #f5f5f7;
+            --text-muted: #8e8e93;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: var(--obsidian-black); color: var(--text-light); min-height: 100vh; display: flex; flex-direction: column; }
-        header { background-color: var(--obsidian-card); border-bottom: 2px solid var(--allcon-red); padding: 1rem 2rem; position: sticky; top: 0; z-index: 100; }
-        .header-container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .brand-subtitle { font-size: 0.8rem; color: var(--allcon-red); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-        .status-badge { font-size: 0.75rem; padding: 0.35rem 0.75rem; border-radius: 20px; font-weight: 700; display: flex; align-items: center; gap: 6px; background: #212121; border: 1px solid var(--obsidian-border); }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--text-muted); }
-        .status-dot.online { background-color: #4caf50; }
-        .status-dot.offline { background-color: #f44336; }
-        .btn-icon { background: var(--input-bg); border: 1px solid var(--obsidian-border); color: var(--text-light); padding: 0.5rem 0.8rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        h1 { font-size: 1.1rem; letter-spacing: 1px; margin: 0; color: var(--accent-red); }
+        .status-badge { background: rgba(52, 199, 89, 0.15); color: var(--accent-green); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; }
+        .metric-card h3 { margin: 0 0 10px 0; font-size: 0.75rem; color: var(--text-muted); }
+        .metric-card .value { font-size: 2rem; font-weight: 700; }
         
-        main { flex-grow: 1; max-width: 1400px; width: 100%; margin: 1.5rem auto; padding: 0 1.5rem; }
-        .summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .metric-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); padding: 1rem 1.25rem; border-radius: 6px; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
-        .metric-value { font-size: 1.6rem; font-weight: 800; color: white; margin-top: 0.2rem; }
-
-        .project-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; }
-        .project-header { padding: 1rem 1.25rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--obsidian-border); display: flex; justify-content: space-between; align-items: center; }
-        .project-path { font-size: 0.75rem; color: var(--allcon-red); font-family: monospace; font-weight: 700; word-break: break-all; margin-bottom: 0.2rem; }
-        .alert-tag { background: #2e7d32; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; }
-
-        .drawing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .drawing-table th { background: rgba(0, 0, 0, 0.3); color: var(--text-muted); text-align: left; padding: 0.6rem 1.25rem; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--obsidian-border); }
-        .drawing-table td { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--obsidian-border); }
-
-        .rev-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 800; font-size: 0.75rem; background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid #388e3c; }
-
-        /* MODAL */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-box { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); border-top: 3px solid var(--allcon-red); width: 100%; max-width: 500px; border-radius: 6px; padding: 1.5rem; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; }
-        .form-input { width: 100%; padding: 0.6rem 0.8rem; background: var(--input-bg); border: 1px solid var(--obsidian-border); color: white; border-radius: 4px; outline: none; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
-        .btn-save { background: var(--allcon-red); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: 700; cursor: pointer; }
-        .btn-cancel { background: transparent; color: var(--text-muted); border: 1px solid var(--obsidian-border); padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; }
+        .project-section { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; overflow: hidden; }
+        .project-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #252525; cursor: pointer; user-select: none; }
+        .project-header:hover { background: #2a2a2a; }
+        .project-path { font-family: monospace; font-size: 0.9rem; color: var(--accent-red); font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .toggle-icon { font-size: 0.8rem; transition: transform 0.3s; }
+        .project-section.collapsed .toggle-icon { transform: rotate(-90deg); }
+        .project-section.collapsed .drawing-table-container { display: none; }
+        .badge-filtered { background: var(--accent-green); color: #000; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        
+        .drawing-table-container { padding: 0 20px 15px 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
+        th { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding: 10px; }
+        td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        .rev-tag { background: rgba(52, 199, 89, 0.15); color: var(--accent-green); padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; }
+        
+        .new-alert-badge { background: var(--accent-red); color: #fff; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 8px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .status-verified { color: var(--accent-green); font-weight: 600; font-size: 0.85rem; }
     </style>
 </head>
 <body>
-
     <header>
-        <div class="header-container">
-            <div>
-                <strong style="font-size: 1.2rem;">ALLCON</strong>
-                <span class="brand-subtitle"> | Drawing Revision & Alert Hub</span>
-            </div>
-            <div style="display: flex; gap: 1rem; align-items: center;">
-                <div class="status-badge">
-                    <span class="status-dot" id="connDot"></span>
-                    <span id="connText">Syncing...</span>
-                </div>
-                <button class="btn-icon" onclick="promptSettingsPin()">⚙️ Data Config</button>
-            </div>
-        </div>
+        <h1>ALLCON | DRAWING REVISION & ALERT HUB</h1>
+        <div class="status-badge">● Live Feed Connected</div>
     </header>
 
-    <main>
-        <div class="summary-bar">
-            <div class="metric-card">
-                <div class="metric-label">Monitored AFC Packages</div>
-                <div class="metric-value" id="countProjects">0</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Total AFC Drawings Indexed</div>
-                <div class="metric-value" id="countTotalDrawings">0</div>
-            </div>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <h3>MONITORED AFC PACKAGES</h3>
+            <div class="value" id="total-packages">0</div>
         </div>
-
-        <div id="projectContainer"></div>
-    </main>
-
-    <!-- CONFIG MODAL -->
-    <div class="modal-overlay" id="configModal">
-        <div class="modal-box">
-            <h3 style="margin-bottom: 1rem; color: white;">Data Source Configuration</h3>
-            <div class="form-group">
-                <label>JSON Data Source Path</label>
-                <input type="text" id="cfgDataUrl" class="form-input" value="drawing-data.json">
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeConfigModal()">Cancel</button>
-                <button class="btn-save" onclick="saveConfiguration()">Reload Data</button>
-            </div>
+        <div class="metric-card">
+            <h3>TOTAL AFC DRAWINGS INDEXED</h3>
+            <div class="value" id="total-drawings">0</div>
         </div>
     </div>
 
+    <div id="content-container">
+        <p style="color: var(--text-muted); text-align: center; padding: 40px;">Loading live Nextcloud data...</p>
+    </div>
+
     <script>
-        let config = {
-            dataUrl: localStorage.getItem('nc_data_url') || 'drawing-data.json',
-            pin: localStorage.getItem('nc_pin') || '1234'
-        };
-
-        function promptSettingsPin() {
-            const pin = prompt("Enter Security PIN:");
-            if (pin === config.pin) {
-                document.getElementById('cfgDataUrl').value = config.dataUrl;
-                document.getElementById('configModal').classList.add('active');
-            } else if (pin !== null) {
-                alert("Incorrect PIN");
-            }
-        }
-
-        function closeConfigModal() {
-            document.getElementById('configModal').classList.remove('action');
-            document.getElementById('configModal').classList.remove('active');
-        }
-
-        function saveConfiguration() {
-            config.dataUrl = document.getElementById('cfgDataUrl').value.trim() || 'drawing-data.json';
-            localStorage.setItem('nc_data_url', config.dataUrl);
-            closeConfigModal();
-            loadDashboardData();
-        }
-
-        function updateStatus(online, msg) {
-            document.getElementById('connDot').className = `status-dot ${online ? 'online' : 'offline'}`;
-            document.getElementById('connText').innerText = msg;
-        }
-
-        async function loadDashboardData() {
-            updateStatus(false, "Reading Data...");
+        async function loadDrawingData() {
             try {
-                const response = await fetch(config.dataUrl + '?t=' + Date.now());
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const projectsData = await response.json();
-                updateStatus(true, "Live Feed Connected");
-                renderDashboard(projectsData);
+                const response = await fetch('drawing-data.json?t=' + new Date().getTime());
+                if (!response.ok) throw new Error();
+                renderDashboard(await response.json());
             } catch (err) {
-                console.error("Data Load Error:", err);
-                updateStatus(false, "Waiting for sync file...");
-                document.getElementById('projectContainer').innerHTML = `
-                    <div style="text-align:center; padding: 3rem; color: var(--text-muted);">
-                        No <code>drawing-data.json</code> found yet. Trigger your GitHub Action to generate the live data feed.
-                    </div>`;
+                document.getElementById('content-container').innerHTML = `<p style="color: var(--accent-red); text-align: center; padding: 40px;">Error loading drawing catalog.</p>`;
             }
         }
 
-        function renderDashboard(projectsData) {
-            const container = document.getElementById('projectContainer');
+        function renderDashboard(data) {
+            const container = document.getElementById('content-container');
             container.innerHTML = '';
+            let totalDrawingsCount = 0;
+            document.getElementById('total-packages').innerText = data.length;
 
-            if (!projectsData || projectsData.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-muted);">No AFC packages found in the sync output. Check your folder paths.</div>`;
+            if (data.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px;">No AFC packages found.</p>`;
+                document.getElementById('total-drawings').innerText = 0;
                 return;
             }
 
-            let totalDrawings = 0;
+            data.forEach(pkg => {
+                totalDrawingsCount += pkg.drawings.length;
+                const section = document.createElement('div');
+                
+                // Check if any drawing in this folder is flagged as new
+                const hasNewDrawing = pkg.drawings.some(d => d.isNew);
+                
+                // Collapsed by default unless it has new incoming revisions
+                section.className = hasNewDrawing ? 'project-section' : 'project-section collapsed';
 
-            projectsData.forEach(p => {
-                totalDrawings += p.drawings.length;
-
-                let drawingsHtml = p.drawings.map(d => `
-                    <tr>
-                        <td><strong>${d.filename}</strong></td>
-                        <td><span class="rev-badge">${d.rev}</span></td>
-                        <td>${d.uploaded}</td>
-                        <td><strong style="color:#81c784;">AFC VERIFIED</strong></td>
-                    </tr>
-                `).join('');
-
-                container.innerHTML += `
-                    <div class="project-card">
-                        <div class="project-header">
-                            <div>
-                                <div class="project-path">${p.path}</div>
-                            </div>
-                            <span class="alert-tag">AFC Filtered</span>
+                section.innerHTML = `
+                    <div class="project-header" onclick="toggleSection(this)">
+                        <div class="project-path">
+                            <span class="toggle-icon">▼</span> 
+                            <span>${pkg.path}</span>
+                            ${hasNewDrawing ? '<span class="new-alert-badge">! NEW REVISION</span>' : ''}
                         </div>
-                        <table class="drawing-table">
+                        <div class="badge-filtered">AFC FILTERED</div>
+                    </div>
+                    <div class="drawing-table-container">
+                        <table>
                             <thead>
                                 <tr>
                                     <th>Drawing File Name</th>
@@ -196,19 +128,31 @@
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody>${drawingsHtml}</tbody>
+                            <tbody>
+                                ${pkg.drawings.map(d => `
+                                    <tr>
+                                        <td>
+                                            ${d.filename}${d.isNew ? '<span class="new-alert-badge">NEW</span>' : ''}
+                                        </td>
+                                        <td><span class="rev-tag">${d.rev}</span></td>
+                                        <td>${d.uploaded}</td>
+                                        <td><span class="status-verified">AFC VERIFIED</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
                         </table>
                     </div>
                 `;
+                container.appendChild(section);
             });
-
-            document.getElementById('countProjects').innerText = projectsData.length;
-            document.getElementById('countTotalDrawings').innerText = totalDrawings;
+            document.getElementById('total-drawings').innerText = totalDrawingsCount;
         }
 
-        window.onload = function() {
-            loadDashboardData();
-        };
+        function toggleSection(headerEl) {
+            headerEl.parentElement.classList.toggle('collapsed');
+        }
+
+        loadDrawingData();
     </script>
 </body>
 </html>
