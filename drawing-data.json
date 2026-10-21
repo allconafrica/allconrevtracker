@@ -35,14 +35,14 @@
                 "rev": "REV 01",
                 "uploaded": "Wed, 16 Se",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             },
             {
                 "filename": "MIL26.006-PBBP-1420-09-4_rev.02 - Pinion Bearing Base Plate.pdf",
                 "rev": "REV 02",
                 "uploaded": "Wed, 21 Oc",
                 "status": "latest",
-                "isNew": true
+                "isNew": false
             },
             {
                 "filename": "MIL26.006-TBDB-1420-09-2.1_rev.00 - DE Trun Brg Base Plate.pdf",
