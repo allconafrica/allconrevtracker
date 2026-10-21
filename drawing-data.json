@@ -32,14 +32,14 @@
             },
             {
                 "filename": "MIL26.006-PBBP-1420-09-4_rev.01 - Pinion Bearing Base Plate.pdf",
-                "rev": "REV 00",
+                "rev": "REV 01",
                 "uploaded": "Wed, 16 Se",
                 "status": "latest",
-                "isNew": false
+                "isNew": true
             },
             {
                 "filename": "MIL26.006-PBBP-1420-09-4_rev.02 - Pinion Bearing Base Plate.pdf",
-                "rev": "REV 00",
+                "rev": "REV 02",
                 "uploaded": "Wed, 21 Oc",
                 "status": "latest",
                 "isNew": true
