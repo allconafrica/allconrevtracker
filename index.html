@@ -34,12 +34,13 @@
         .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
         .metric-value { font-size: 1.6rem; font-weight: 800; color: white; margin-top: 0.2rem; }
 
-        .project-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; }
+        .project-card { background: var(--obsidian-card); border: 1px solid var(--obsidian-border); border-radius: 6px; margin-bottom: 1.25rem; overflow: hidden; transition: border-color 0.3s ease; }
         .project-card.has-update { border: 1px solid var(--allcon-red); box-shadow: 0 0 15px rgba(217, 35, 42, 0.2); }
         .project-header { padding: 1rem 1.25rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--obsidian-border); display: flex; justify-content: space-between; align-items: center; }
         .project-path { font-size: 0.75rem; color: var(--allcon-red); font-family: monospace; font-weight: 700; }
         .project-name { font-size: 1.1rem; font-weight: 800; color: white; }
-        .alert-tag { background: #2e7d32; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; }
+        .alert-tag { background: var(--allcon-red); color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         .drawing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .drawing-table th { background: rgba(0, 0, 0, 0.3); color: var(--text-muted); text-align: left; padding: 0.6rem 1.25rem; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--obsidian-border); }
@@ -47,6 +48,7 @@
 
         .rev-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 800; font-size: 0.75rem; }
         .rev-badge.latest { background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid #388e3c; }
+        .rev-badge.superseded { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); text-decoration: line-through; border: 1px solid var(--obsidian-border); }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
@@ -66,14 +68,14 @@
         <div class="header-container">
             <div>
                 <strong style="font-size: 1.2rem;">ALLCON</strong>
-                <span class="brand-subtitle"> | Drawing Revision Tracker</span>
+                <span class="brand-subtitle"> | Drawing Revision & Alert Hub</span>
             </div>
             <div style="display: flex; gap: 1rem; align-items: center;">
                 <div class="status-badge">
                     <span class="status-dot" id="connDot"></span>
-                    <span id="connText">Disconnected</span>
+                    <span id="connText">Loading...</span>
                 </div>
-                <button class="btn-icon" onclick="promptSettingsPin()">⚙️ Server Config</button>
+                <button class="btn-icon" onclick="promptSettingsPin()">⚙️ Data Endpoint Config</button>
             </div>
         </div>
     </header>
@@ -100,48 +102,30 @@
     <!-- CONFIG MODAL -->
     <div class="modal-overlay" id="configModal">
         <div class="modal-box">
-            <h3 style="margin-bottom: 1rem; color: white;">Nextcloud WebDAV Settings</h3>
+            <h3 style="margin-bottom: 1rem; color: white;">Data Source Configuration</h3>
             <div class="form-group">
-                <label>WebDAV Base URL</label>
-                <input type="text" id="cfgUrl" class="form-input" placeholder="https://provider.com/remote.php/dav/files/user/">
-            </div>
-            <div class="form-group">
-                <label>Root Watch Path</label>
-                <input type="text" id="cfgPath" class="form-input" value="AllconData/Projects/Client/">
-            </div>
-            <div class="form-group">
-                <label>Nextcloud Username</label>
-                <input type="text" id="cfgUser" class="form-input">
-            </div>
-            <div class="form-group">
-                <label>App Password / Token</label>
-                <input type="password" id="cfgPass" class="form-input">
+                <label>JSON Data Source URL</label>
+                <input type="text" id="cfgDataUrl" class="form-input" placeholder="drawing-data.json">
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeConfigModal()">Cancel</button>
-                <button class="btn-save" onclick="saveConfiguration()">Sync Live Files</button>
+                <button class="btn-save" onclick="saveConfiguration()">Save & Refresh</button>
             </div>
         </div>
     </div>
 
     <script>
         let config = {
-            url: localStorage.getItem('nc_url') || '',
-            path: localStorage.getItem('nc_path') || 'AllconData/Projects/Client/',
-            user: localStorage.getItem('nc_user') || '',
-            pass: localStorage.getItem('nc_pass') || '',
+            dataUrl: localStorage.getItem('nc_data_url') || 'drawing-data.json',
             pin: localStorage.getItem('nc_pin') || '1234'
         };
 
-        let liveProjects = [];
+        let projectsData = [];
 
         function promptSettingsPin() {
             const pin = prompt("Enter Security PIN:");
             if (pin === config.pin) {
-                document.getElementById('cfgUrl').value = config.url;
-                document.getElementById('cfgPath').value = config.path;
-                document.getElementById('cfgUser').value = config.user;
-                document.getElementById('cfgPass').value = config.pass;
+                document.getElementById('cfgDataUrl').value = config.dataUrl;
                 document.getElementById('configModal').classList.add('active');
             } else if (pin !== null) {
                 alert("Incorrect PIN");
@@ -153,21 +137,10 @@
         }
 
         function saveConfiguration() {
-            let baseUrl = document.getElementById('cfgUrl').value.trim();
-            if(!baseUrl.endsWith('/')) baseUrl += '/';
-
-            config.url = baseUrl;
-            config.path = document.getElementById('cfgPath').value.trim();
-            config.user = document.getElementById('cfgUser').value.trim();
-            config.pass = document.getElementById('cfgPass').value.trim();
-
-            localStorage.setItem('nc_url', config.url);
-            localStorage.setItem('nc_path', config.path);
-            localStorage.setItem('nc_user', config.user);
-            localStorage.setItem('nc_pass', config.pass);
-
+            config.dataUrl = document.getElementById('cfgDataUrl').value.trim() || 'drawing-data.json';
+            localStorage.setItem('nc_data_url', config.dataUrl);
             closeConfigModal();
-            fetchLiveNextcloudData();
+            loadJsonData();
         }
 
         function updateStatus(online, msg) {
@@ -175,100 +148,19 @@
             document.getElementById('connText').innerText = msg;
         }
 
-        // LIVE WEBDAV CRAWLER WITH CORS PROXY WRAPPER
-        async function fetchLiveNextcloudData() {
-            if (!config.url || !config.user || !config.pass) {
-                updateStatus(false, "Config Required");
-                return;
-            }
-
-            updateStatus(false, "Indexing Nextcloud...");
-            liveProjects = [];
-
+        async function loadJsonData() {
+            updateStatus(false, "Syncing Data...");
             try {
-                const rootTarget = config.url + encodeURI(config.path);
-                await scanDirectoryRecursive(rootTarget);
+                // Fetch JSON data with cache-busting timestamp
+                const response = await fetch(config.dataUrl + '?t=' + Date.now());
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
-                updateStatus(true, "Live Connected");
+                projectsData = await response.json();
+                updateStatus(true, "JSON Feed Active");
                 renderDashboard();
             } catch (err) {
-                console.error("WebDAV Sync Error:", err);
-                updateStatus(false, "Sync Error (CORS Blocked)");
-            }
-        }
-
-        async function scanDirectoryRecursive(targetUrl) {
-            const authHeader = 'Basic ' + btoa(config.user + ':' + config.pass);
-            
-            // Bypass browser CORS via proxy
-            const proxiedUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
-
-            const response = await fetch(proxiedUrl, {
-                method: 'PROPFIND',
-                headers: {
-                    'Authorization': authHeader,
-                    'Depth': '1',
-                    'Content-Type': 'application/xml'
-                }
-            });
-
-            if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-
-            const text = await response.text();
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(text, "text/xml");
-            const responses = xmlDoc.getElementsByTagNameNS("DAV:", "response");
-
-            let currentFolderFiles = [];
-            let subFolders = [];
-
-            for (let i = 0; i < responses.length; i++) {
-                const href = responses[i].getElementsByTagNameNS("DAV:", "href")[0].textContent;
-                const decodedHref = decodeURIComponent(href);
-                
-                if (targetUrl.endsWith(decodedHref) || decodedHref.endsWith(encodeURI(targetUrl))) continue;
-
-                const isCollection = responses[i].getElementsByTagNameNS("DAV:", "resourcetype")[0].getElementsByTagNameNS("DAV:", "collection").length > 0;
-                const lastMod = responses[i].getElementsByTagNameNS("DAV:", "getlastmodified")[0]?.textContent || '';
-
-                // EXCLUSION RULE: Skip Enquiry & RFQ Folders
-                if (decodedHref.includes("Enquiry") || decodedHref.includes("RFQ") || decodedHref.includes("Tender")) {
-                    continue; 
-                }
-
-                if (isCollection) {
-                    subFolders.push(config.url.replace(/\/remote\.php.*/, '') + href);
-                } else {
-                    // TARGET RULE: Process drawing files ONLY within AFC paths
-                    if ((decodedHref.includes("AFC") || decodedHref.includes("Approved For Construction")) && 
-                       (decodedHref.endsWith(".pdf") || decodedHref.endsWith(".dwg"))) {
-                        
-                        const fileName = decodedHref.split('/').pop();
-                        const revMatch = fileName.match(/(REV\s?\d+|REV[A-Z0-9_-]+)/i);
-                        const revTag = revMatch ? revMatch[0].toUpperCase() : 'REV 00';
-
-                        currentFolderFiles.push({
-                            filename: fileName,
-                            rev: revTag,
-                            modified: lastMod ? new Date(lastMod).toLocaleDateString() : 'Recent'
-                        });
-                    }
-                }
-            }
-
-            if (currentFolderFiles.length > 0) {
-                const pathParts = targetUrl.split('/');
-                const clientProjectName = pathParts.slice(-4, -1).filter(p => p && !p.includes('remote.php')).join(' > ');
-
-                liveProjects.push({
-                    path: targetUrl.replace(config.url, ''),
-                    projectName: clientProjectName || "AFC Drawings Package",
-                    drawings: currentFolderFiles
-                });
-            }
-
-            for (let folderUrl of subFolders) {
-                await scanDirectoryRecursive(folderUrl);
+                console.error("JSON Fetch Error:", err);
+                updateStatus(false, "Fetch Error");
             }
         }
 
@@ -276,33 +168,33 @@
             const container = document.getElementById('projectContainer');
             container.innerHTML = '';
 
-            if (liveProjects.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-muted);">No AFC Drawing Packages found yet. Ensure target subfolders are named with 'AFC' and contain .pdf files.</div>`;
-                return;
-            }
-
+            let revisedCount = 0;
             let totalDrawings = 0;
 
-            liveProjects.forEach(p => {
+            // Sort so projects with new revisions float to top
+            projectsData.sort((a, b) => b.hasNewRevision - a.hasNewRevision);
+
+            projectsData.forEach(p => {
+                if (p.hasNewRevision) revisedCount++;
                 totalDrawings += p.drawings.length;
 
                 let drawingsHtml = p.drawings.map(d => `
                     <tr>
                         <td><strong>${d.filename}</strong></td>
-                        <td><span class="rev-badge latest">${d.rev}</span></td>
-                        <td>${d.modified}</td>
-                        <td><strong style="color:#81c784;">AFC VERIFIED</strong></td>
+                        <td><span class="rev-badge ${d.status}">${d.rev}</span></td>
+                        <td>${d.uploaded}</td>
+                        <td>${d.isNew ? '<strong style="color:var(--allcon-red);">⚠️ NEW REVISION - DO NOT USE REV 01</strong>' : '<span style="color:#81c784;">AFC VERIFIED</span>'}</td>
                     </tr>
                 `).join('');
 
                 container.innerHTML += `
-                    <div class="project-card">
+                    <div class="project-card ${p.hasNewRevision ? 'has-update' : ''}">
                         <div class="project-header">
                             <div>
                                 <div class="project-path">${p.path}</div>
-                                <div class="project-name">${p.projectName}</div>
+                                <div class="project-name">${p.project}</div>
                             </div>
-                            <span class="alert-tag">AFC Filtered</span>
+                            ${p.hasNewRevision ? '<span class="alert-tag">⚠️ NEW REV ISSUED</span>' : '<span class="alert-tag" style="background:#2e7d32; animation:none;">AFC FILTERED</span>'}
                         </div>
                         <table class="drawing-table">
                             <thead>
@@ -310,7 +202,7 @@
                                     <th>AFC Drawing File</th>
                                     <th>Revision</th>
                                     <th>Last Modified</th>
-                                    <th>Status</th>
+                                    <th>Procurement Status</th>
                                 </tr>
                             </thead>
                             <tbody>${drawingsHtml}</tbody>
@@ -319,16 +211,13 @@
                 `;
             });
 
-            document.getElementById('countProjects').innerText = liveProjects.length;
+            document.getElementById('countRevised').innerText = revisedCount;
+            document.getElementById('countProjects').innerText = projectsData.length;
             document.getElementById('countTotalDrawings').innerText = totalDrawings;
         }
 
         window.onload = function() {
-            if (config.url) {
-                fetchLiveNextcloudData();
-            } else {
-                updateStatus(false, "Config Required");
-            }
+            loadJsonData();
         };
     </script>
 </body>
