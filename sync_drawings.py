@@ -5,9 +5,12 @@ import requests
 from urllib.parse import unquote
 from xml.etree import ElementTree as ET
 
-WEBDAV_BASE_URL = os.environ.get("NC_URL")
-USERNAME = os.environ.get("NC_USER")
-APP_PASSWORD = os.environ.get("NC_PASS")
+# Support multiple possible secret variable names
+WEBDAV_BASE_URL = os.environ.get("NC_URL") or os.environ.get("NEXTCLOUD_URL") or ""
+USERNAME = os.environ.get("NC_USER") or os.environ.get("NEXTCLOUD_USER") or ""
+APP_PASSWORD = os.environ.get("NC_PASS") or os.environ.get("NEXTCLOUD_PASS") or ""
+
+# Primary root directory on Nextcloud
 START_PATH = "AllconData/Projects/Clients/"
 
 def get_webdav_folder_contents(url):
@@ -27,7 +30,7 @@ def get_webdav_folder_contents(url):
     try:
         response = requests.request("PROPFIND", url, auth=auth, headers=headers, data=body)
         if response.status_code != 207:
-            print(f"HTTP {response.status_code} on: {url}")
+            print(f"HTTP {response.status_code} accessing: {url}")
             return []
 
         tree = ET.fromstring(response.content)
@@ -54,7 +57,7 @@ def get_webdav_folder_contents(url):
             })
         return items
     except Exception as e:
-        print(f"Connection error on {url}: {e}")
+        print(f"Error connecting to {url}: {e}")
         return []
 
 def scan_nextcloud_tree(current_url, current_path_str=""):
@@ -75,11 +78,11 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
             full_sub_url = base_prefix + raw_href if raw_href.startswith('/') else current_url.rstrip('/') + '/' + raw_href
 
         if item["is_collection"]:
-            print(f"CRAWLING FOLDER: {current_path_str}/{decoded_name}")
+            print(f"Crawling: {current_path_str}/{decoded_name}")
             
-            # Catch any folder containing 'AFC' or ending in '.PDF' or 'PDF'
-            if "AFC" in decoded_name.upper() or decoded_name.upper().endswith("PDF"):
-                print(f"--> MATCHED AFC FOLDER: {current_path_str}/{decoded_name}")
+            # Catch folders containing 'AFC' or ending/matching 'PDF' or 'Drawings'
+            name_upper = decoded_name.upper()
+            if "AFC" in name_upper or name_upper.endswith("PDF") or "DRAWINGS" in name_upper:
                 pdf_files = get_webdav_folder_contents(full_sub_url)
                 drawings = []
                 
@@ -106,6 +109,7 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
                             })
 
                 if drawings:
+                    print(f"==> MATCHED {len(drawings)} files in: {current_path_str}/{decoded_name}")
                     results.append({
                         "path": current_path_str + "/" + decoded_name,
                         "drawings": drawings
@@ -117,14 +121,14 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
 
 if __name__ == "__main__":
     if not WEBDAV_BASE_URL:
-        print("Missing NC_URL secret!")
+        print("CRITICAL: Missing NC_URL secret variable. Check repository Secrets.")
         exit(1)
 
     target_url = WEBDAV_BASE_URL.rstrip('/') + '/' + START_PATH.strip('/')
-    print(f"Starting scan at: {target_url}")
+    print(f"Connecting to Nextcloud WebDAV at: {target_url}")
     
     scanned_data = scan_nextcloud_tree(target_url, "AllconData/Projects/Clients")
-    print(f"Scan complete. Total packages found: {len(scanned_data)}")
+    print(f"Scan complete. Found {len(scanned_data)} valid drawing packages.")
     
     with open("drawing-data.json", "w", encoding="utf-8") as f:
         json.dump(scanned_data, f, indent=4, ensure_ascii=False)
