@@ -179,6 +179,8 @@ if __name__ == "__main__":
             if key not in existing_drawings_map or existing_drawings_map[key] != d["rev"]:
                 d["isNew"] = True
                 newly_detected.append({"path": pkg["path"], "filename": d["filename"], "rev": d["rev"]})
+            else:
+                d["isNew"] = False  # Automatically clear the NEW badge on subsequent runs
 
     with open("drawing-data.json", "w", encoding="utf-8") as f:
         json.dump(scanned_data, f, indent=4, ensure_ascii=False)
