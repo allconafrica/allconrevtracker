@@ -9,6 +9,11 @@ WEBDAV_BASE_URL = os.environ.get("NC_URL") or ""
 USERNAME = os.environ.get("NC_USER") or ""
 APP_PASSWORD = os.environ.get("NC_PASS") or ""
 
+START_REL_PATH = "AllconData/Projects/Clients"
+
+# Track visited URLs to prevent infinite loops
+VISITED_URLS = set()
+
 def get_webdav_folder_contents(url):
     auth = requests.auth.HTTPBasicAuth(USERNAME, APP_PASSWORD)
     headers = {
@@ -24,9 +29,8 @@ def get_webdav_folder_contents(url):
     </d:propfind>"""
 
     try:
-        response = requests.request("PROPFIND", url, auth=auth, headers=headers, data=body)
+        response = requests.request("PROPFIND", url, auth=auth, headers=headers, data=body, timeout=15)
         if response.status_code != 207:
-            print(f"HTTP {response.status_code} accessing: {url}")
             return []
 
         tree = ET.fromstring(response.content)
@@ -54,10 +58,16 @@ def get_webdav_folder_contents(url):
             })
         return items
     except Exception as e:
-        print(f"Error connecting to {url}: {e}")
+        print(f"Error accessing {url}: {e}")
         return []
 
 def scan_nextcloud_tree(current_url, current_path_str=""):
+    # Normalize URL to prevent loop duplicates
+    norm_url = current_url.rstrip('/')
+    if norm_url in VISITED_URLS:
+        return []
+    VISITED_URLS.add(norm_url)
+
     results = []
     items = get_webdav_folder_contents(current_url)
 
@@ -65,63 +75,62 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
         raw_href = item["href"]
         decoded_name = unquote(raw_href.rstrip('/').split('/')[-1])
         
-        # Skip root level repeated self-references
-        if not decoded_name or decoded_name in ["Files", "remote.php", "dav"]: 
+        # Skip self references and parent references
+        if not decoded_name or decoded_name in [".", "..", "Clients", "Projects", "AllconData", "Files", "remote.php", "dav"]: 
             continue
 
+        # Reconstruct absolute subfolder URL cleanly
         if raw_href.startswith('http'):
             full_sub_url = raw_href
         else:
             base_prefix = current_url.rsplit('/remote.php', 1)[0]
             full_sub_url = base_prefix + raw_href if raw_href.startswith('/') else current_url.rstrip('/') + '/' + raw_href
 
+        full_sub_url = full_sub_url.rstrip('/')
+
         if item["is_collection"]:
-            # Clean up path representation
-            new_path_str = f"{current_path_str}/{decoded_name}" if current_path_str else decoded_name
-            
-            name_upper = decoded_name.upper()
-            
-            # Check if this folder contains drawings (e.g. AFC, PDF, DRAWINGS, REVISION)
-            is_drawing_folder = any(keyword in name_upper for keyword in ["AFC", "PDF", "DRAWING", "REV"])
-            
-            if is_drawing_folder:
-                folder_files = get_webdav_folder_contents(full_sub_url)
-                drawings = []
-                
-                for file_item in folder_files:
-                    if not file_item["is_collection"]:
-                        filename = unquote(file_item["href"].rstrip('/').split('/')[-1])
-                        if filename.lower().endswith(('.pdf', '.dwg')):
-                            rev_match = re.search(r'(REV\s?\d+|REV[A-Z0-9_-]+)', filename, re.IGNORECASE)
-                            rev_tag = rev_match.group(0).upper() if rev_match else "REV 00"
-                            
-                            mod_date = "Recent"
-                            if file_item["last_modified"]:
-                                try:
-                                    mod_date = file_item["last_modified"][:10]
-                                except:
-                                    pass
+            # Don't recurse if we already visited this exact subfolder
+            if full_sub_url in VISITED_URLS:
+                continue
 
-                            drawings.append({
-                                "filename": filename,
-                                "rev": rev_tag,
-                                "uploaded": mod_date,
-                                "status": "latest",
-                                "isNew": False
-                            })
+            new_path_str = f"{current_path_str}/{decoded_name}"
+            print(f"Scanning folder: {new_path_str}")
 
-                if drawings:
-                    print(f"==> MATCHED {len(drawings)} files in: {new_path_str}")
-                    results.append({
-                        "path": new_path_str,
-                        "drawings": drawings
-                    })
-                else:
-                    # Keep searching deeper inside this folder if no immediate files were found
-                    results.extend(scan_nextcloud_tree(full_sub_url, new_path_str))
-            else:
-                # Recurse deeper into subdirectories (e.g., AllconData -> Projects -> Clients)
-                results.extend(scan_nextcloud_tree(full_sub_url, new_path_str))
+            folder_files = get_webdav_folder_contents(full_sub_url)
+            drawings = []
+            
+            # Check for PDF/DWG files in this folder
+            for file_item in folder_files:
+                if not file_item["is_collection"]:
+                    filename = unquote(file_item["href"].rstrip('/').split('/')[-1])
+                    if filename.lower().endswith(('.pdf', '.dwg')):
+                        rev_match = re.search(r'(REV\s?\d+|REV[A-Z0-9_-]+)', filename, re.IGNORECASE)
+                        rev_tag = rev_match.group(0).upper() if rev_match else "REV 00"
+                        
+                        mod_date = "Recent"
+                        if file_item["last_modified"]:
+                            try:
+                                mod_date = file_item["last_modified"][:10]
+                            except:
+                                pass
+
+                        drawings.append({
+                            "filename": filename,
+                            "rev": rev_tag,
+                            "uploaded": mod_date,
+                            "status": "latest",
+                            "isNew": False
+                        })
+
+            if drawings:
+                print(f"==> MATCHED {len(drawings)} drawings in: {new_path_str}")
+                results.append({
+                    "path": new_path_str,
+                    "drawings": drawings
+                })
+
+            # Check subdirectories inside this project folder
+            results.extend(scan_nextcloud_tree(full_sub_url, new_path_str))
 
     return results
 
@@ -130,11 +139,11 @@ if __name__ == "__main__":
         print("CRITICAL: Missing NC_URL secret variable.")
         exit(1)
 
-    start_url = WEBDAV_BASE_URL.rstrip('/') + '/AllconData'
-    print(f"Starting deep crawl at: {start_url}")
+    start_url = WEBDAV_BASE_URL.rstrip('/') + '/' + START_REL_PATH
+    print(f"Starting scan at: {start_url}")
     
-    scanned_data = scan_nextcloud_tree(start_url, "AllconData")
-    print(f"Scan complete. Found {len(scanned_data)} drawing packages.")
+    scanned_data = scan_nextcloud_tree(start_url, START_REL_PATH)
+    print(f"Scan complete. Indexed {len(scanned_data)} packages across your projects.")
     
     with open("drawing-data.json", "w", encoding="utf-8") as f:
         json.dump(scanned_data, f, indent=4, ensure_ascii=False)
