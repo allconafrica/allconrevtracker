@@ -39,7 +39,7 @@
         .project-header { padding: 1rem 1.25rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--obsidian-border); display: flex; justify-content: space-between; align-items: center; }
         .project-path { font-size: 0.75rem; color: var(--allcon-red); font-family: monospace; font-weight: 700; }
         .project-name { font-size: 1.1rem; font-weight: 800; color: white; }
-        .alert-tag { background: var(--allcon-red); color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; }
+        .alert-tag { background: #2e7d32; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 3px; text-transform: uppercase; }
 
         .drawing-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .drawing-table th { background: rgba(0, 0, 0, 0.3); color: var(--text-muted); text-align: left; padding: 0.6rem 1.25rem; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--obsidian-border); }
@@ -175,7 +175,7 @@
             document.getElementById('connText').innerText = msg;
         }
 
-        // LIVE WEBDAV CRAWLER
+        // LIVE WEBDAV CRAWLER WITH CORS PROXY WRAPPER
         async function fetchLiveNextcloudData() {
             if (!config.url || !config.user || !config.pass) {
                 updateStatus(false, "Config Required");
@@ -193,14 +193,17 @@
                 renderDashboard();
             } catch (err) {
                 console.error("WebDAV Sync Error:", err);
-                updateStatus(false, "Sync Error (Check Credentials/CORS)");
+                updateStatus(false, "Sync Error (CORS Blocked)");
             }
         }
 
         async function scanDirectoryRecursive(targetUrl) {
             const authHeader = 'Basic ' + btoa(config.user + ':' + config.pass);
             
-            const response = await fetch(targetUrl, {
+            // Bypass browser CORS via proxy
+            const proxiedUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+
+            const response = await fetch(proxiedUrl, {
                 method: 'PROPFIND',
                 headers: {
                     'Authorization': authHeader,
@@ -223,7 +226,6 @@
                 const href = responses[i].getElementsByTagNameNS("DAV:", "href")[0].textContent;
                 const decodedHref = decodeURIComponent(href);
                 
-                // Skip the self target folder
                 if (targetUrl.endsWith(decodedHref) || decodedHref.endsWith(encodeURI(targetUrl))) continue;
 
                 const isCollection = responses[i].getElementsByTagNameNS("DAV:", "resourcetype")[0].getElementsByTagNameNS("DAV:", "collection").length > 0;
@@ -248,15 +250,13 @@
                         currentFolderFiles.push({
                             filename: fileName,
                             rev: revTag,
-                            modified: lastMod ? new Date(lastMod).toLocaleDateString() : 'Recent',
-                            rawDate: new Date(lastMod || Date.now())
+                            modified: lastMod ? new Date(lastMod).toLocaleDateString() : 'Recent'
                         });
                     }
                 }
             }
 
             if (currentFolderFiles.length > 0) {
-                // Determine clean display title from path
                 const pathParts = targetUrl.split('/');
                 const clientProjectName = pathParts.slice(-4, -1).filter(p => p && !p.includes('remote.php')).join(' > ');
 
@@ -267,7 +267,6 @@
                 });
             }
 
-            // Recurse into valid subfolders
             for (let folderUrl of subFolders) {
                 await scanDirectoryRecursive(folderUrl);
             }
@@ -278,7 +277,7 @@
             container.innerHTML = '';
 
             if (liveProjects.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-muted);">No AFC Drawing Packages found yet. Ensure folders are named with 'AFC' and contain .pdf files.</div>`;
+                container.innerHTML = `<div style="text-align:center; padding: 3rem; color: var(--text-muted);">No AFC Drawing Packages found yet. Ensure target subfolders are named with 'AFC' and contain .pdf files.</div>`;
                 return;
             }
 
@@ -303,7 +302,7 @@
                                 <div class="project-path">${p.path}</div>
                                 <div class="project-name">${p.projectName}</div>
                             </div>
-                            <span class="alert-tag" style="background:#2e7d32;">AFC Filtered</span>
+                            <span class="alert-tag">AFC Filtered</span>
                         </div>
                         <table class="drawing-table">
                             <thead>
