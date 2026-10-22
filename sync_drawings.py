@@ -3,7 +3,7 @@ import re
 import json
 import requests
 import smtplib
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from urllib.parse import unquote
@@ -92,7 +92,7 @@ def scan_nextcloud_tree(current_url, current_path_str=""):
         else:
             filename = decoded_name
             if filename.lower().endswith(('.pdf', '.dwg')):
-                # Improved regex to handle rev.00, rev_01, rev02, etc.
+                # Handles rev.00, rev_01, rev02, etc.
                 rev_match = re.search(r'REV[\s._-]?([A-Z0-9]+)', filename, re.IGNORECASE)
                 if rev_match:
                     rev_tag = f"REV {rev_match.group(1).upper()}"
@@ -139,7 +139,7 @@ def send_email_alerts(new_items):
     body = "The following new drawings or revisions were indexed from Nextcloud:\n\n"
     for item in new_items:
         body += f"• [{item['path']}] {item['filename']} ({item['rev']})\n"
-    body += "\nAccess your dashboard to view the full long-term revision history."
+    body += "\nAccess your dashboard to view the full revision history."
 
     msg = MIMEMultipart()
     msg['From'] = SMTP_USER
@@ -176,8 +176,9 @@ if __name__ == "__main__":
     start_url = WEBDAV_BASE_URL.rstrip('/') + '/AllconData'
     scanned_data = scan_nextcloud_tree(start_url, "AllconData")
 
+    now = datetime.now()
+    timestamp_str = now.strftime("%Y-%m-%d %H:%M")
     newly_detected = []
-    timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     for pkg in scanned_data:
         for d in pkg["drawings"]:
@@ -194,27 +195,43 @@ if __name__ == "__main__":
             else:
                 d["isNew"] = False
 
-    # Save current dashboard snapshot
+    # Save current dashboard state snapshot
     with open("drawing-data.json", "w", encoding="utf-8") as f:
         json.dump(scanned_data, f, indent=4, ensure_ascii=False)
 
-    # Load and append to permanent long-term history file
+    # --- PERMANENT 7-DAY AUDIT HISTORY MANAGEMENT ---
     history_log = []
     if os.path.exists("revision-history.json"):
         try:
             with open("revision-history.json", "r", encoding="utf-8") as f:
                 history_log = json.load(f)
-        except:
-            pass
+        except Exception:
+            history_log = []
 
+    # 1. Prepend newly detected revisions to the top
     if newly_detected:
-        for item in newly_detected:
+        for item in reversed(newly_detected):
             history_log.insert(0, item)
-        
-        with open("revision-history.json", "w", encoding="utf-8") as f:
-            json.dump(history_log, f, indent=4, ensure_ascii=False)
 
+    # 2. Filter out entries older than 7 days
+    cutoff_date = now - timedelta(days=7)
+    filtered_history = []
+    for entry in history_log:
+        try:
+            entry_dt = datetime.strptime(entry.get("timestamp", ""), "%Y-%m-%d %H:%M")
+            if entry_dt >= cutoff_date:
+                filtered_history.append(entry)
+        except Exception:
+            # Keep entries without valid timestamp format just in case
+            filtered_history.append(entry)
+
+    # 3. ALWAYS save revision-history.json so the file exists on GitHub Pages
+    with open("revision-history.json", "w", encoding="utf-8") as f:
+        json.dump(filtered_history, f, indent=4, ensure_ascii=False)
+
+    # Trigger alerts if new items were found
+    if newly_detected:
         print(f"Detected {len(newly_detected)} new or updated drawings. Updating history and sending alerts...")
         send_email_alerts(newly_detected)
     else:
-        print("Scan complete. No new revisions found.")
+        print("Scan complete. No new revisions found. History file verified.")
